@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SartoriBank — Pix da Feira Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<style>
+
+/* =====================================================================
+   TOKENS
+   ===================================================================== */
+:root {
+  --bg:        #070a0f;
+  --bg-2:      #0c1018;
+  --bg-3:      #111820;
+  --surf:      #141c27;
+  --surf-2:    #1a2333;
+  --surf-3:    #202d3f;
+  --border:    rgba(255,255,255,0.06);
+  --border-2:  rgba(255,255,255,0.11);
+  --border-hi: rgba(61,220,132,0.35);
+
+  --em:        #3ddc84;
+  --em-2:      #5ee89c;
+  --em-dim:    rgba(61,220,132,0.10);
+  --em-glow:   0 0 28px rgba(61,220,132,0.22);
+  --em-glow2:  0 0 60px rgba(61,220,132,0.14);
+
+  --gold:      #f5c842;
+  --gold-dim:  rgba(245,200,66,0.10);
+
+  --danger:    #ff5c5c;
+  --warn:      #f59e0b;
+
+  --text:      #edf2f7;
+  --text-2:    #7f8fa6;
+  --text-3:    #3d4f62;
+  --text-inv:  #070a0f;
+
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+
+  --sh-sm:  0 2px 10px rgba(0,0,0,.4);
+  --sh-md:  0 8px 32px rgba(0,0,0,.55);
+  --sh-lg:  0 20px 60px rgba(0,0,0,.65);
+
+  --t-f:  0.14s cubic-bezier(.4,0,.2,1);
+  --t-b:  0.24s cubic-bezier(.4,0,.2,1);
+  --t-s:  0.38s cubic-bezier(.4,0,.2,1);
+  --t-sp: 0.38s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* =====================================================================
+   BASE
+   ===================================================================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Mono',monospace;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* grain */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;
+}
+/* ambient blobs */
+body::after{
+  content:'';position:fixed;
+  width:600px;height:600px;top:-160px;left:-160px;
+  background:radial-gradient(circle,rgba(61,220,132,.04) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+.blob-r{
+  position:fixed;width:500px;height:500px;
+  bottom:-120px;right:-80px;
+  background:radial-gradient(circle,rgba(245,200,66,.05) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+
+/* =====================================================================
+   HEADER
+   ===================================================================== */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,10,15,.88);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.header-brand{display:flex;align-items:center;gap:14px;padding:17px 0;}
+.logo-icon{
+  width:38px;height:38px;
+  background:linear-gradient(140deg,var(--em) 0%,#1db060 100%);
+  border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+  box-shadow:0 4px 16px rgba(61,220,132,.3),inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform var(--t-sp),box-shadow var(--t-b);
+}
+.logo-icon:hover{transform:scale(1.1) rotate(-4deg);box-shadow:0 8px 24px rgba(61,220,132,.42);}
+.brand-text h1{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;letter-spacing:-.5px;line-height:1;
+  background:linear-gradient(130deg,var(--text) 0%,rgba(238,242,247,.65) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand-text p{font-size:.6rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--em);margin-top:3px;}
+.header-actions{display:flex;gap:8px;padding:13px 0;flex-wrap:wrap;}
+
+/* =====================================================================
+   BUTTONS
+   ===================================================================== */
+.btn{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.74rem;letter-spacing:.7px;
+  padding:9px 18px;border:1px solid transparent;cursor:pointer;
+  transition:all var(--t-b);text-transform:uppercase;border-radius:var(--r-sm);
+  position:relative;overflow:hidden;white-space:nowrap;
+}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.06),transparent);pointer-events:none;}
+.btn:active{transform:scale(.97);}
+.btn-ghost{background:var(--surf);color:var(--text-2);border-color:var(--border-2);}
+.btn-ghost:hover{background:var(--surf-2);color:var(--text);box-shadow:var(--sh-sm);}
+.btn-gold{background:linear-gradient(135deg,var(--gold) 0%,#e8b830 100%);color:var(--text-inv);box-shadow:0 4px 14px rgba(245,200,66,.22);}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(245,200,66,.32);filter:brightness(1.06);}
+.btn-green{background:linear-gradient(135deg,var(--em) 0%,#1db060 100%);color:var(--text-inv);box-shadow:0 4px 14px rgba(61,220,132,.28);font-weight:800;}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(61,220,132,.36);filter:brightness(1.06);}
+.btn-red{background:rgba(255,92,92,.1);color:var(--danger);border-color:rgba(255,92,92,.2);}
+.btn-red:hover{background:var(--danger);color:#fff;box-shadow:0 4px 14px rgba(255,92,92,.3);}
+
+/* =====================================================================
+   LAYOUT
+   ===================================================================== */
+main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:48px 28px 80px;}
+.section-header{display:flex;align-items:baseline;gap:16px;margin-bottom:36px;}
+.section-header h2{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.7rem;letter-spacing:-.8px;
+  background:linear-gradient(130deg,var(--text) 30%,var(--text-2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.section-header span{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);}
+.screen{display:none;}
+.screen.active{display:block;animation:screenIn .32s cubic-bezier(.4,0,.2,1) both;}
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* =====================================================================
+   STANDS GRID
+   ===================================================================== */
+.stands-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.stand-card{
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:24px;cursor:pointer;transition:all var(--t-b);position:relative;overflow:hidden;
+}
+.stand-card::before{
+  content:'';position:absolute;top:0;left:-100%;width:55%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.035),transparent);
+  transform:skewX(-18deg);transition:left .5s ease;
+}
+.stand-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--em),transparent);
+  transform:scaleX(0);transform-origin:left;transition:transform var(--t-b);
+}
+.stand-card:hover{background:var(--surf-2);border-color:var(--border-hi);transform:translateY(-3px);box-shadow:var(--sh-md),var(--em-glow);}
+.stand-card:hover::before{left:120%;}
+.stand-card:hover::after{transform:scaleX(1);}
+.stand-number{font-size:.58rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--em);margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.stand-number::before{content:'';display:inline-block;width:16px;height:1px;background:var(--em);opacity:.5;}
+.stand-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:6px;line-height:1.25;color:var(--text);}
+.stand-desc{font-size:.8rem;color:var(--text-2);margin-bottom:20px;line-height:1.6;font-weight:300;}
+.stand-key-label{font-size:.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;}
+.stand-key{font-size:.7rem;background:rgba(255,255,255,.03);padding:8px 12px;border-radius:var(--r-sm);word-break:break-all;border:1px solid var(--border);color:var(--text-2);transition:all var(--t-f);}
+.stand-card:hover .stand-key{border-color:var(--border-hi);color:var(--em-2);}
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 20px;border:1px dashed var(--border-2);border-radius:var(--r-xl);color:var(--text-3);background:var(--surf);}
+.empty-state .empty-icon{font-size:3.5rem;margin-bottom:16px;}
+.empty-state p{font-size:.9rem;line-height:1.7;font-weight:300;}
+
+/* =====================================================================
+   CHECKOUT
+   ===================================================================== */
+.checkout-box{max-width:520px;margin:0 auto;}
+.checkout-stand-badge{
+  background:var(--surf);border:1px solid var(--border-hi);border-radius:var(--r-md);
+  padding:18px 22px;margin-bottom:28px;display:flex;align-items:center;gap:16px;
+  box-shadow:var(--em-glow),var(--sh-sm);
+}
+.checkout-stand-badge .badge-icon{
+  width:44px;height:44px;background:linear-gradient(135deg,var(--em-dim),rgba(61,220,132,.04));
+  border:1px solid var(--border-hi);border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.badge-info h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text);margin-bottom:2px;}
+.badge-info p{font-size:.68rem;color:var(--em);letter-spacing:.4px;}
+.amount-section{margin-bottom:28px;}
+.amount-section label{display:block;font-family:'Syne',sans-serif;font-weight:700;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;}
+.amount-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.amount-preset{
+  padding:9px 16px;background:var(--surf);border:1px solid var(--border-2);
+  border-radius:var(--r-sm);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;
+  cursor:pointer;color:var(--text-2);transition:all var(--t-b);
+}
+.amount-preset:hover{background:var(--surf-2);border-color:var(--em);color:var(--em);transform:translateY(-1px);}
+.amount-preset.active{background:var(--em-dim);border-color:var(--em);color:var(--em);box-shadow:0 0 0 3px rgba(61,220,132,.08);}
+.amount-input-wrap{
+  display:flex;align-items:stretch;background:var(--surf);border:1px solid var(--border-2);
+  border-radius:var(--r-md);overflow:hidden;transition:border-color var(--t-f),box-shadow var(--t-f);
+}
+.amount-input-wrap:focus-within{border-color:var(--em);box-shadow:0 0 0 3px rgba(61,220,132,.1),var(--em-glow);}
+.amount-prefix{padding:16px 18px;background:var(--surf-2);font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-3);border-right:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;}
+.amount-input{flex:1;border:none;outline:none;padding:16px 18px;font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;background:transparent;color:var(--text);letter-spacing:-.5px;}
+.amount-input::placeholder{color:var(--text-3);}
+.checkout-actions{display:flex;gap:10px;margin-top:28px;}
+.checkout-actions .btn{flex:1;padding:15px;font-size:.8rem;}
+
+/* =====================================================================
+   PIX SCREEN — FULL REDESIGN
+   ===================================================================== */
+
+/* Wrapper centralizer */
+.pix-wrap{
+  max-width:480px;
+  margin:0 auto;
+}
+
+/* ── Phase 1: Processing overlay ── */
+.pix-processing{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px 24px;gap:28px;
+  animation:fadeIn .3s ease both;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.proc-ring{
+  width:80px;height:80px;position:relative;
+}
+.proc-ring svg{
+  width:80px;height:80px;
+  animation:spinRing 1.2s linear infinite;
+}
+@keyframes spinRing{to{transform:rotate(360deg)}}
+.proc-ring-track{fill:none;stroke:var(--surf-3);stroke-width:4;}
+.proc-ring-fill{
+  fill:none;stroke:var(--em);stroke-width:4;
+  stroke-linecap:round;
+  stroke-dasharray:160;
+  stroke-dashoffset:50;
+  animation:dash 1.2s ease-in-out infinite;
+}
+@keyframes dash{
+  0%{stroke-dashoffset:160}
+  50%{stroke-dashoffset:30}
+  100%{stroke-dashoffset:160}
+}
+.proc-icon{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+}
+.proc-label{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text);text-align:center;}
+.proc-sub{font-size:.7rem;color:var(--text-3);text-align:center;letter-spacing:1px;text-transform:uppercase;}
+.proc-dots span{
+  display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--em);margin:0 3px;
+  animation:bounce .9s infinite ease-in-out;
+}
+.proc-dots span:nth-child(2){animation-delay:.15s;}
+.proc-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-8px);opacity:1}}
+
+/* ── Phase 2: QR Card ── */
+.pix-card{
+  background:var(--surf);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  overflow:hidden;
+  box-shadow:var(--sh-lg),var(--em-glow),var(--em-glow2);
+  animation:cardIn .5s cubic-bezier(.34,1.26,.64,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── Card Header ── */
+.pc-header{
+  position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#0a1f14 0%,#071510 50%,#040d09 100%);
+  border-bottom:1px solid rgba(61,220,132,.1);
+  padding:26px 28px 22px;
+}
+.pc-header::before{
+  content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:320px;height:220px;
+  background:radial-gradient(ellipse,rgba(61,220,132,.13) 0%,transparent 65%);
+  pointer-events:none;
+}
+/* animated ring behind brand */
+.pc-ring-bg{
+  position:absolute;bottom:-30px;right:-30px;
+  width:140px;height:140px;border-radius:50%;
+  border:1px solid rgba(61,220,132,.07);
+  pointer-events:none;
+}
+.pc-ring-bg::after{
+  content:'';position:absolute;inset:14px;border-radius:50%;
+  border:1px solid rgba(61,220,132,.05);
+}
+.pc-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.pc-brand{display:flex;align-items:center;gap:10px;}
+.pc-brand-dot{
+  width:32px;height:32px;border-radius:var(--r-xs);
+  background:linear-gradient(140deg,var(--em),#1db060);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  box-shadow:0 4px 12px rgba(61,220,132,.32);
+}
+.pc-brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.92rem;color:var(--text);}
+.pc-brand-sub{font-size:.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--em);margin-top:1px;}
+
+/* Status badge */
+.pc-status{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(61,220,132,.1);
+  border:1px solid rgba(61,220,132,.25);
+  border-radius:99px;
+  padding:5px 11px;
+  font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--em);
+}
+.pc-status-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--em);
+  box-shadow:0 0 6px var(--em);
+  animation:pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+/* Amount display */
+.pc-amount-area{text-align:center;}
+.pc-amount-label{font-size:.6rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;}
+.pc-amount{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:2.6rem;letter-spacing:-1.5px;
+  color:var(--em);
+  text-shadow:0 0 32px rgba(61,220,132,.35);
+  line-height:1;
+}
+.pc-to{font-size:.68rem;color:var(--text-3);margin-top:6px;letter-spacing:.3px;}
+.pc-to strong{color:var(--text-2);font-weight:500;}
+
+/* ── Timer banner ── */
+.pc-timer{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:rgba(245,200,66,.07);
+  border-top:1px solid rgba(245,200,66,.1);
+  border-bottom:1px solid rgba(245,200,66,.1);
+  padding:10px 28px;
+}
+.pc-timer-icon{font-size:14px;}
+.pc-timer-text{font-size:.65rem;color:rgba(245,200,66,.8);letter-spacing:.5px;}
+.pc-timer-count{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;
+  color:var(--gold);letter-spacing:.5px;min-width:42px;
+}
+
+/* ── QR Section ── */
+.pc-qr{
+  padding:28px 28px 20px;
+  text-align:center;
+  background:var(--bg-2, #0c1018);
+  position:relative;
+}
+.pc-qr::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(61,220,132,.05),transparent 65%);
+  pointer-events:none;
+}
+
+/* QR frame */
+.qr-frame{
+  display:inline-block;position:relative;
+  padding:3px;
+  border-radius:var(--r-md);
+  background:linear-gradient(135deg,rgba(61,220,132,.4),rgba(61,220,132,.1) 50%,rgba(61,220,132,.3));
+  margin-bottom:20px;
+  transition:all var(--t-sp);
+}
+.qr-frame:hover{
+  transform:scale(1.03);
+  background:linear-gradient(135deg,var(--em),rgba(61,220,132,.3) 50%,var(--em));
+  box-shadow:var(--em-glow),var(--em-glow2);
+}
+.qr-inner{
+  background:#fff;
+  border-radius:calc(var(--r-md) - 3px);
+  padding:14px;
+  position:relative;
+}
+/* Corner accents */
+.qr-inner::before,.qr-inner::after{
+  content:'';position:absolute;width:18px;height:18px;
+  border-color:var(--em);border-style:solid;
+}
+.qr-inner::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:3px 0 0 0;}
+.qr-inner::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 3px 0;}
+#qr-container{display:block;}
+#qr-container canvas,#qr-container img{display:block;}
+
+/* Scan hint */
+.pc-scan-label{
+  font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);
+  margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.pc-scan-label::before,.pc-scan-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Pix key pill */
+.pix-key-pill{
+  display:flex;align-items:center;gap:0;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border-2);
+  border-radius:var(--r-sm);
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.pkp-label{
+  padding:10px 12px;
+  background:var(--surf-2);
+  border-right:1px solid var(--border);
+  font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);
+  flex-shrink:0;white-space:nowrap;
+}
+.pkp-value{
+  flex:1;padding:10px 12px;
+  font-size:.72rem;color:var(--text-2);word-break:break-all;
+  /* this is the element that JS fills via id="pix-key-display" */
+}
+.pkp-copy{
+  padding:10px 14px;background:transparent;border:none;border-left:1px solid var(--border);
+  cursor:pointer;color:var(--text-3);font-size:14px;transition:all var(--t-f);flex-shrink:0;
+}
+.pkp-copy:hover{background:var(--em-dim);color:var(--em);}
+
+/* ── Details section ── */
+.pc-details{
+  padding:20px 28px;
+  border-top:1px solid var(--border);
+  background:var(--surf);
+  display:flex;flex-direction:column;gap:0;
+}
+.pc-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;position:relative;
+  border-bottom:1px solid var(--border);
+}
+.pc-row:last-child{border-bottom:none;}
+.pc-row-label{font-size:.6rem;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-3);}
+.pc-row-value{
+  font-family:'Syne',sans-serif;font-weight:600;font-size:.82rem;
+  color:var(--text-2);text-align:right;max-width:60%;word-break:break-word;
+}
+.pc-row-value.mono{font-family:'DM Mono',monospace;font-weight:400;font-size:.72rem;letter-spacing:.5px;}
+.pc-row-value.em{color:var(--em);}
+
+/* ── Auth strip ── */
+.pc-auth{
+  margin:0 28px 20px;
+  background:linear-gradient(135deg,rgba(61,220,132,.05),rgba(61,220,132,.02));
+  border:1px solid rgba(61,220,132,.12);
+  border-radius:var(--r-sm);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.pc-auth-icon{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(61,220,132,.12);
+  border:1px solid rgba(61,220,132,.2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.pc-auth-text strong{
+  display:block;font-family:'Syne',sans-serif;font-weight:700;font-size:.72rem;color:var(--em);margin-bottom:2px;
+}
+.pc-auth-text span{font-size:.62rem;color:var(--text-3);letter-spacing:.3px;}
+
+/* ── Perforated divider ── */
+.pc-perf{
+  position:relative;height:20px;background:var(--surf);
+  display:flex;align-items:center;overflow:hidden;
+}
+.pc-perf::before,.pc-perf::after{
+  content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;border-radius:50%;background:var(--bg);
+  border:1px solid var(--border);z-index:2;
+}
+.pc-perf::before{left:-8px;}
+.pc-perf::after{right:-8px;}
+.pc-perf-line{
+  flex:1;height:1px;margin:0 10px;
+  background-image:repeating-linear-gradient(90deg,var(--border-2) 0,var(--border-2) 6px,transparent 6px,transparent 12px);
+}
+
+/* ── Comprovante section (visible post-confirm) ── */
+.pc-comprovante{
+  padding:20px 28px 0;
+  background:var(--surf);
+}
+.pc-comp-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:.78rem;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text-3);
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.pc-comp-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.pc-comp-id{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:12px 16px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  margin-bottom:12px;
+}
+.pcid-left small{display:block;font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;}
+.pcid-left span{font-family:'DM Mono',monospace;font-size:.76rem;color:var(--text-2);letter-spacing:.5px;}
+.pcid-badge{
+  padding:4px 10px;border-radius:99px;font-family:'Syne',sans-serif;font-weight:700;font-size:.58rem;
+  letter-spacing:.5px;text-transform:uppercase;background:var(--em-dim);color:var(--em);
+  border:1px solid rgba(61,220,132,.2);white-space:nowrap;
+}
+
+/* ── Footer ── */
+.pc-footer{
+  padding:18px 28px;
+  border-top:1px solid var(--border);
+  background:var(--bg-2,#0c1018);
+  display:flex;gap:10px;flex-wrap:wrap;
+  border-radius:0 0 var(--r-xl) var(--r-xl);
+}
+.pc-footer .btn{flex:1;min-width:110px;padding:12px;}
+
+/* =====================================================================
+   ADMIN
+   ===================================================================== */
+.admin-form{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;margin-bottom:24px;transition:border-color var(--t-b);}
+.admin-form:hover{border-color:var(--border-2);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:500px){.form-row{grid-template-columns:1fr;}}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-family:'Syne',sans-serif;font-weight:700;font-size:.67rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);}
+.form-group input,.form-group textarea{background:var(--bg-2,#0c1018);border:1px solid var(--border-2);color:var(--text);padding:11px 14px;font-family:'DM Mono',monospace;font-size:.87rem;outline:none;border-radius:var(--r-sm);transition:border-color var(--t-f),box-shadow var(--t-f);}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--text-3);}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--em);box-shadow:0 0 0 3px rgba(61,220,132,.1);}
+.form-group textarea{resize:vertical;min-height:72px;}
+.admin-list{display:flex;flex-direction:column;gap:10px;}
+.admin-item{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--surf);border:1px solid var(--border);border-radius:var(--r-md);transition:all var(--t-b);}
+.admin-item:hover{background:var(--surf-2);border-color:var(--border-2);transform:translateX(3px);}
+.admin-item-num{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--text-3);flex-shrink:0;min-width:28px;}
+.admin-item-info{flex:1;min-width:0;}
+.admin-item-info strong{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--text);display:block;margin-bottom:2px;}
+.admin-item-info small{font-size:.7rem;color:var(--text-3);}
+.admin-item-actions{display:flex;gap:8px;flex-shrink:0;}
+.admin-item-actions .btn{padding:7px 12px;font-size:.67rem;}
+.nav-tabs{display:flex;gap:2px;margin-bottom:36px;background:var(--surf);border:1px solid var(--border);border-radius:var(--r-md);padding:4px;width:fit-content;overflow-x:auto;}
+.nav-tab{padding:9px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:.74rem;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--text-3);border-radius:calc(var(--r-md) - 4px);white-space:nowrap;transition:all var(--t-b);}
+.nav-tab.active{background:var(--surf-3);color:var(--text);border-color:var(--border-2);box-shadow:var(--sh-sm);}
+.nav-tab:hover:not(.active){color:var(--text-2);background:rgba(255,255,255,.03);}
+.info-box{background:linear-gradient(135deg,rgba(245,200,66,.06),rgba(245,200,66,.02));border:1px solid rgba(245,200,66,.18);border-radius:var(--r-md);padding:18px 22px;font-size:.8rem;line-height:1.7;color:var(--text-2);font-weight:300;}
+.info-box strong{color:var(--gold);font-weight:500;}
+
+/* =====================================================================
+   TOAST
+   ===================================================================== */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--surf-3);color:var(--text);padding:14px 22px;border-radius:var(--r-md);border:1px solid var(--border-2);border-left:3px solid var(--em);font-family:'Syne',sans-serif;font-weight:600;font-size:.8rem;z-index:9998;transform:translateY(80px) scale(.95);opacity:0;transition:all .3s cubic-bezier(.34,1.36,.64,1);max-width:300px;box-shadow:var(--sh-md);backdrop-filter:blur(16px);}
+.toast.show{transform:translateY(0) scale(1);opacity:1;}
+
+/* =====================================================================
+   RESPONSIVE
+   ===================================================================== */
+@media(max-width:640px){
+  main{padding:24px 14px 60px;}
+  header{padding:0 16px;}
+  .brand-text h1{font-size:1rem;}
+  .section-header h2{font-size:1.35rem;}
+  .stands-grid{grid-template-columns:1fr;}
+  .pix-card{border-radius:var(--r-lg);}
+  .pc-header{padding:22px 20px 18px;}
+  .pc-qr{padding:22px 20px 16px;}
+  .pc-details,.pc-comprovante{padding:16px 20px 0;}
+  .pc-auth{margin:0 20px 16px;}
+  .pc-footer{padding:14px 20px;border-radius:0 0 var(--r-lg) var(--r-lg);}
+  .pc-amount{font-size:2rem;}
+  .toast{bottom:14px;right:14px;left:14px;max-width:unset;}
+  .checkout-actions{flex-direction:column;}
+  .nav-tabs{width:100%;}
+  .nav-tab{flex:1;text-align:center;}
+}
+
+@media print{
+  body{background:#fff;color:#000;}
+  header,.pc-footer,.pc-timer,.pc-qr .pc-scan-label,.pkp-copy,.pix-processing{display:none;}
+  .pix-card{box-shadow:none;border:1px solid #ddd;}
+  .pc-header{background:#f5f5f5;color:#000;}
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surf-3);border-radius:99px;}
+/*pix enviado*/
+.pix-success-modal {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(10px);
+
+  display: none;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 99999;
+
+  animation: fadeIn .35s ease;
+}
+
+.pix-success-box {
+  width: 340px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(16,24,40,.98),
+      rgba(10,14,22,.98)
+    );
+
+  border: 1px solid rgba(0,255,140,.2);
+
+  border-radius: 28px;
+
+  padding: 35px 25px;
+
+  text-align: center;
+
+  box-shadow:
+    0 0 60px rgba(0,255,140,.15);
+
+  animation: popUp .4s ease;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+
+  margin: 0 auto 20px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(circle,
+    #2fff9b,
+    #00c96b);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+
+  box-shadow:
+    0 0 40px rgba(0,255,140,.45);
+}
+
+.pix-success-box h2 {
+  color: #32ff9c;
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.pix-success-box p {
+  color: #9fb0d0;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.pix-success-box button {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+
+  padding: 15px;
+
+  background: #32ff9c;
+  color: #07110d;
+
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.pix-success-box button:hover {
+  transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popUp {
+  from {
+    opacity: 0;
+    transform: scale(.9) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.reset-btn{
+  background:#ff3b3b;
+  color:white;
+  border:none;
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:15px;
+ 
+  
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+</style>
+</head>
+<body>
+<div class="blob-r"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="logo-icon">🏦</div>
+    <div class="brand-text">
+      <h1>SartoriBank</h1>
+      <p>Pix Cenográfico · Feira Escolar</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="showScreen('home')">🏪 Lojas</button>
+    <button class="btn btn-gold" onclick="abrirAdmin()">⚙ Admin</button>
+  </div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="section-header">
+      <h2>Escolha um Stand</h2>
+      <span>Selecione onde deseja pagar</span>
+    </div>
+    <div class="stands-grid" id="stands-grid"></div>
+  </div>
+
+  <!-- CHECKOUT -->
+  <div class="screen" id="screen-checkout">
+    <div class="section-header">
+      <h2>Valor do Pix</h2>
+      <span>Informe quanto deseja pagar</span>
+    </div>
+    <div class="checkout-box">
+      <div class="checkout-stand-badge">
+        <div class="badge-icon" id="checkout-icon">🏪</div>
+        <div class="badge-info">
+          <h3 id="checkout-stand-name">—</h3>
+          <p id="checkout-stand-sub">Stand selecionado</p>
+        </div>
+      </div>
+      <div class="amount-section">
+        <label>Valor a pagar</label>
+        <div class="amount-presets" id="amount-presets">
+          <button class="amount-preset" onclick="setAmount(5)">R$ 5</button>
+          <button class="amount-preset" onclick="setAmount(10)">R$ 10</button>
+          <button class="amount-preset" onclick="setAmount(15)">R$ 15</button>
+          <button class="amount-preset" onclick="setAmount(20)">R$ 20</button>
+          <button class="amount-preset" onclick="setAmount(50)">R$ 50</button>
+        </div>
+        <div class="amount-input-wrap">
+          <span class="amount-prefix">R$</span>
+          <input class="amount-input" type="number" id="amount-input" placeholder="0,00" min="0.01" step="0.01" oninput="syncAmount(this.value)">
+        </div>
+      </div>
+      <div class="checkout-actions">
+        <button class="btn btn-ghost" onclick="showScreen('home')">← Voltar</button>
+        <button class="btn btn-green" onclick="gerarPix()">Gerar Pix ▸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIX GERADO -->
+  <div class="screen" id="screen-pix">
+    <div class="section-header">
+      <h2>Pix Gerado!</h2>
+      <span>Mostre para o vendedor confirmar</span>
+    </div>
+    <div class="pix-wrap">
+
+      <!-- Phase 1: Processing (JS toggles visibility) -->
+      <div class="pix-processing" id="pix-processing">
+        <div class="proc-ring">
+          <svg viewBox="0 0 80 80">
+            <circle class="proc-ring-track" cx="40" cy="40" r="34"/>
+            <circle class="proc-ring-fill" cx="40" cy="40" r="34"/>
+          </svg>
+          <div class="proc-icon">⚡</div>
+        </div>
+        <div>
+          <div class="proc-label">Gerando cobrança</div>
+          <div class="proc-sub" style="margin-top:6px;">Processando com segurança</div>
+        </div>
+        <div class="proc-dots"><span></span><span></span><span></span></div>
+      </div>
+
+      <!-- Phase 2: Full card (hidden during processing) -->
+      <div class="pix-card" id="pix-card" style="display:none;">
+
+        <!-- Header with amount -->
+        <div class="pc-header">
+          <div class="pc-ring-bg"></div>
+          <div class="pc-header-top">
+            <div class="pc-brand">
+              <div class="pc-brand-dot">🏦</div>
+              <div>
+                <div class="pc-brand-name">BancoFeira</div>
+                <div class="pc-brand-sub">Pix Cenográfico</div>
+              </div>
+            </div>
+            <div class="pc-status">
+              <span class="pc-status-dot"></span>
+              Aguardando
+            </div>
+          </div>
+          <div class="pc-amount-area">
+            <div class="pc-amount-label">Valor a pagar</div>
+            <!-- id="pix-amount" preserved for JS -->
+            <div class="pc-amount" id="pix-amount">R$ 0,00</div>
+            <div class="pc-to">Para: <strong id="pix-stand-name">—</strong></div>
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="pc-timer">
+          <span class="pc-timer-icon">⏱</span>
+          <span class="pc-timer-text">Expira em</span>
+          <span class="pc-timer-count" id="pix-timer">10:00</span>
+        </div>
+
+        <!-- QR Code section -->
+        <div class="pc-qr">
+          <div class="pc-scan-label">Escaneie o QR Code</div>
+          <div class="qr-frame">
+            <div class="qr-inner">
+              <div id="qr-container"></div>
+            </div>
+          </div>
+          <div class="pc-scan-label">ou use a chave Pix abaixo</div>
+
+          <!-- Pix key — id="pix-key-display" preserved for JS, injected into .pkp-value -->
+          <div class="pix-key-pill">
+            <span class="pkp-label">Chave Pix</span>
+            <span class="pkp-value" id="pix-key-display">—</span>
+            <button class="pkp-copy" title="Copiar" onclick="copiarChave()">📋</button>
+          </div>
+        </div>
+
+        <!-- Perforated divider -->
+        <div class="pc-perf"><div class="pc-perf-line"></div></div>
+
+        <!-- Details rows -->
+        <div class="pc-details">
+          <div class="pc-row">
+            <span class="pc-row-label">Destinatário</span>
+            <!-- id="pix-stand-name" is in header; this is a visual duplicate -->
+            <span class="pc-row-value" id="pix-detail-stand">—</span>
+          </div>
+          <div class="pc-row">
+            <span class="pc-row-label">Chave</span>
+            <span class="pc-row-value mono" id="pix-key">—</span>
+          </div>
+          <div class="pc-row">
+            <span class="pc-row-label">Data / Hora</span>
+            <span class="pc-row-value mono" id="pix-time">—</span>
+          </div>
+          <div class="pc-row">
+            <span class="pc-row-label">Tipo</span>
+            <span class="pc-row-value em">Pix Instantâneo</span>
+          </div>
+          <div class="pc-row">
+            <span class="pc-row-label">Banco</span>
+            <span class="pc-row-value">BancoFeira S.A.</span>
+          </div>
+          <div class="pc-row">
+            <span class="pc-row-label">ISPB</span>
+            <span class="pc-row-value mono" id="pix-ispb">—</span>
+          </div>
+        </div>
+
+        <!-- Auth strip -->
+        <div class="pc-auth">
+          <div class="pc-auth-icon">🔐</div>
+          <div class="pc-auth-text">
+            <strong>Transação Autenticada</strong>
+            <span id="pix-auth-code">Auth · —</span>
+          </div>
+        </div>
+
+        <!-- Perforated divider 2 -->
+        <div class="pc-perf"><div class="pc-perf-line"></div></div>
+
+        <!-- Comprovante block -->
+        <div class="pc-comprovante">
+          <div class="pc-comp-title">Comprovante</div>
+          <div class="pc-comp-id">
+            <div class="pcid-left">
+              <small>ID da Transação</small>
+              <span id="pix-txid">—</span>
+            </div>
+            <div class="pcid-badge">Pendente</div>
+          </div>
+          <div class="pc-comp-id">
+            <div class="pcid-left">
+              <small>Código E2E</small>
+              <span id="pix-e2e">—</span>
+            </div>
+            <div class="pcid-badge" style="background:rgba(245,200,66,.1);color:var(--gold);border-color:rgba(245,200,66,.2);">BCB · SP</div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pc-footer">
+          <button class="btn btn-ghost" onclick="showScreen('home')">← Nova Compra</button>
+          <button class="btn btn-gold" onclick="imprimirRecibo()">🖨 Imprimir</button>
+        </div>
+
+      </div><!-- /pix-card -->
+    </div><!-- /pix-wrap -->
+  </div>
+
+  <!-- ADMIN -->
+  <div class="screen" id="screen-admin">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="adminTab('cadastro', this)">➕ Cadastrar Stand</button>
+      <button class="nav-tab" onclick="adminTab('lista', this)">📋 Gerenciar Stands</button>
+      <button class="reset-btn" onclick="resetarPixStats()">
+    Resetar Pix
+  </button>
+
+    </div>
+
+    <div class="info-box" style="margin-bottom:20px;">
+  <strong>📊 Estatísticas</strong><br><br>
+
+  Pix gerados:
+  <strong id="stats-total-pix">0</strong>
+  <br><br>
+
+  Valor total:
+  <strong id="stats-valor-total">R$ 0,00</strong>
+  <br><br>
+
+  Último Pix:
+  <strong id="stats-ultimo-pix">Nenhum</strong>
+</div>
+
+    <div id="admin-cadastro">
+      <div class="section-header">
+        <h2>Novo Stand</h2>
+        <span>Preencha as informações da loja</span>
+      </div>
+      <div class="admin-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Stand *</label>
+            <input type="text" id="form-name" placeholder="Ex: Lanchonete da Turma 3A" maxlength="40">
+          </div>
+          <div class="form-group">
+            <label>Emoji / Ícone</label>
+            <input type="text" id="form-icon" placeholder="🍕" maxlength="2">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Descrição curta</label>
+            <input type="text" id="form-desc" placeholder="Ex: Lanches e salgados caseiros" maxlength="80">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Chave Pix do Stand *</label>
+            <input type="text" id="form-key" placeholder="CPF, e-mail, telefone ou chave aleatória">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Nome do Recebedor (para o QR Code)</label>
+            <input type="text" id="form-receiver" placeholder="Ex: João Silva" maxlength="25">
+          </div>
+        </div>
+        <button class="btn btn-green" style="width:100%;padding:15px;" onclick="cadastrarStand()">
+          ✅ Cadastrar Stand
+        </button>
+      </div>
+      <div class="info-box">
+        <strong>💡 Como funciona:</strong><br>
+        Cadastre cada stand da feira com sua chave Pix real. Os visitantes escolhem o stand, digitam o valor e recebem um QR Code para pagar diretamente. O QR Code gerado é um Pix Copia e Cola real, mas <em>simulado para fins cenográficos</em> — em ambiente escolar real, use chaves Pix reais!
+      </div>
+    </div>
+    <div id="admin-lista" style="display:none;">
+      <div class="section-header">
+        <h2>Stands Cadastrados</h2>
+        <span id="stands-count">0 stands</span>
+      </div>
+      <div class="admin-list" id="admin-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* =====================================================================
+   ESTADO
+   ===================================================================== */
+let stands = JSON.parse(localStorage.getItem('bancofeira_stands') || '[]');
+let selectedStand = null;
+let selectedAmount = null;
+let timerInterval = null;
+let pixStats = JSON.parse(localStorage.getItem('bancofeira_stats') || '{"totalPix":0,"valorTotal":0}');
+
+function resetarPixStats() {
+
+  pixStats = {
+    totalPix: 0,
+    valorTotal: 0,
+    ultimoPix: null
+  };
+
+  localStorage.setItem(
+    'bancofeira_stats',
+    JSON.stringify(pixStats)
+  );
+
+  toast('Estatísticas resetadas!');
+
+}
+if (stands.length === 0) {
+  stands = [
+    { id: 1, name: "Lanchonete 3A", icon: "🍕", desc: "Salgados, lanches e sucos naturais", key: "turma3a@escola.com", receiver: "Turma 3A" },
+    { id: 2, name: "Doces & Afins", icon: "🍰", desc: "Bolos, brigadeiros e docinhos", key: "docesafins@pix.com", receiver: "Maria Silva" },
+    { id: 3, name: "Artesanato", icon: "🎨", desc: "Peças artesanais feitas pelos alunos", key: "11999990001", receiver: "Turma Arte" },
+  ];
+  saveStands();
+}
+
+function saveStands() {
+  localStorage.setItem('bancofeira_stands', JSON.stringify(stands));
+}
+/* =====================================================================
+   SENHA ADMIN
+   ===================================================================== */
+
+const ADMIN_PASSWORD = "1234";
+
+function abrirAdmin() {
+  const senha = prompt("Digite a senha do admin:");
+
+  if (senha === ADMIN_PASSWORD) {
+    showScreen('admin');
+  } else if (senha !== null) {
+    toast('Senha incorreta!', 'err');
+  }
+}
+
+/* =====================================================================
+   NAVEGAÇÃO
+   ===================================================================== */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'home') renderStands();
+  if (name === 'admin') {
+  atualizarStats();
+}
+}
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+function renderStands() {
+  const grid = document.getElementById('stands-grid');
+  if (stands.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div><p>Nenhum stand cadastrado ainda.<br>Vá em <strong>Admin</strong> para adicionar.</p></div>`;
+    return;
+  }
+  grid.innerHTML = stands.map((s, i) => `
+    <div class="stand-card" onclick="selectStand(${i})">
+      <div class="stand-number">Stand #${i + 1}</div>
+      <div class="stand-name">${s.icon || '🏪'} ${s.name}</div>
+      <div class="stand-desc">${s.desc || ''}</div>
+      <div class="stand-key-label">Chave Pix</div>
+      <div class="stand-key">${s.key}</div>
+    </div>
+  `).join('');
+}
+
+function selectStand(index) {
+  selectedStand = stands[index];
+  document.getElementById('checkout-icon').textContent = selectedStand.icon || '🏪';
+  document.getElementById('checkout-stand-name').textContent = selectedStand.name;
+  document.getElementById('checkout-stand-sub').textContent = selectedStand.key;
+  document.getElementById('amount-input').value = '';
+  selectedAmount = null;
+  document.querySelectorAll('.amount-preset').forEach(b => b.classList.remove('active'));
+  showScreen('checkout');
+}
+
+/* =====================================================================
+   CHECKOUT
+   ===================================================================== */
+function setAmount(val) {
+  selectedAmount = val;
+  document.getElementById('amount-input').value = val;
+  document.querySelectorAll('.amount-preset').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent.replace('R$ ','')) === val);
+  });
+}
+
+function syncAmount(val) {
+  selectedAmount = parseFloat(val) || null;
+  document.querySelectorAll('.amount-preset').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent.replace('R$ ','')) === selectedAmount);
+  });
+}
+
+/* =====================================================================
+   PIX — core logic unchanged, new UX around it
+   ===================================================================== */
+function gerarPix() {
+
+  const amt = parseFloat(
+    document.getElementById('amount-input').value
+  );
+
+  if (!selectedStand)
+    return toast('Selecione um stand!', 'err');
+
+  if (!amt || amt <= 0)
+    return toast('Digite um valor válido!', 'err');
+
+  selectedAmount = amt;
+
+  // rastrear pix gerados
+  pixStats.totalPix += 1;
+  pixStats.valorTotal += amt;
+  pixStats.ultimoPix = new Date().toLocaleString('pt-BR');
+
+  localStorage.setItem(
+    'bancofeira_stats',
+    JSON.stringify(pixStats)
+  );
+
+  
+
+  // Switch to pix screen, show processing phase first
+  showScreen('pix');
+  document.getElementById('pix-processing').style.display = 'flex';
+  document.getElementById('pix-card').style.display = 'none';
+
+  // Simulate processing delay (purely visual, ~1.8s)
+setTimeout(() => {
+  try {
+
+    // ── Fill all existing IDs ──
+    const standLabel = `${selectedStand.icon || ''} ${selectedStand.name}`;
+
+    document.getElementById('pix-stand-name').textContent = standLabel;
+
+    document.getElementById('pix-detail-stand').textContent = standLabel;
+
+    document.getElementById('pix-amount').textContent =
+      `R$ ${amt.toFixed(2).replace('.', ',')}`;
+
+    document.getElementById('pix-time').textContent =
+      new Date().toLocaleString('pt-BR');
+
+    document.getElementById('pix-key').textContent =
+      selectedStand.key;
+
+    document.getElementById('pix-key-display').textContent =
+      selectedStand.key;
+
+    // ── Decorative fields ──
+    document.getElementById('pix-ispb').textContent =
+      gerarISPB();
+
+    document.getElementById('pix-txid').textContent =
+      gerarTxID();
+
+    document.getElementById('pix-e2e').textContent =
+      gerarE2E();
+
+    document.getElementById('pix-auth-code').textContent =
+      'Auth · ' + gerarAuthCode();
+
+    // ── QR Code ──
+    const payload =
+      `PIX:${selectedStand.key}|VALOR:${amt}|NOME:${selectedStand.name}`;
+
+    const qrDiv = document.getElementById('qr-container');
+
+    qrDiv.innerHTML = '';
+
+    new QRCode(qrDiv, {
+      text: payload,
+      width: 180,
+      height: 180,
+      colorDark: '#0d0d0d',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // Reveal card
+    document.getElementById('pix-processing').style.display =
+      'none';
+
+    document.getElementById('pix-card').style.display =
+      'block';
+
+    // Timer
+    startTimer(600);
+
+    // Mostrar "Pix enviado" após 15s
+    setTimeout(() => {
+
+      mostrarPixEnviado();
+
+    }, 8000);
+
+  } catch (e) {
+
+    console.error(e);
+
+    document.getElementById('pix-processing').style.display =
+      'none';
+
+    toast('Erro ao gerar Pix!', 'err');
+
+  }
+
+}, 1800);
+
+
+
+// =========================
+// FUNÇÕES DO MODAL
+// =========================
+
+}
+function mostrarPixEnviado() {
+
+  document.getElementById(
+    'pix-success-modal'
+  ).style.display = 'flex';
+
+}
+
+function fecharPixEnviado() {
+
+  document.getElementById(
+    'pix-success-modal'
+  ).style.display = 'none';
+
+}
+
+/* Timer */
+function startTimer(seconds) {
+  if (timerInterval) clearInterval(timerInterval);
+  let s = seconds;
+  const el = document.getElementById('pix-timer');
+  function tick() {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    el.textContent = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    if (s <= 60) el.style.color = 'var(--danger)';
+    else el.style.color = 'var(--gold)';
+    if (s <= 0) { clearInterval(timerInterval); el.textContent = 'Expirado'; el.style.color = 'var(--danger)'; }
+    s--;
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+/* Decorative ID generators */
+function gerarISPB() {
+  return '0' + Math.floor(Math.random()*9000000+1000000).toString();
+}
+function gerarTxID() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+  return Array.from({length:26}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+function gerarE2E() {
+  const now = new Date();
+  const d = now.toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
+  const rand = Math.random().toString(36).slice(2,10).toUpperCase();
+  return `E00000000${d}${rand}`.slice(0,32);
+}
+function gerarAuthCode() {
+  return Math.random().toString(36).slice(2,8).toUpperCase() + '-' +
+         Math.random().toString(36).slice(2,6).toUpperCase();
+}
+
+/* ── Payload EMV Pix (unchanged) ── */
+function gerarPayloadPix(chave, nome, valor) {
+  function f(id, v) {
+    const s = String(v);
+    return id + s.length.toString().padStart(2,'0') + s;
+  }
+  const merchantAccountInfo = f('00','BR.GOV.BCB.PIX') + f('01', chave);
+  const mai = f('26', merchantAccountInfo);
+  const nomeClean = (nome || 'LOJA').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').slice(0,25);
+  const valorStr = valor.toFixed(2);
+  let payload = f('00','01') + mai + f('52','0000') + f('53','986') + f('54', valorStr) + f('58','BR') + f('59', nomeClean) + f('60','SAO PAULO') + f('62', f('05','***')) + '6304';
+  const crc = calcCRC16(payload);
+  return payload + crc;
+}
+
+function calcCRC16(str) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+    }
+  }
+  return ((crc & 0xFFFF).toString(16).toUpperCase().padStart(4,'0'));
+}
+
+function copiarChave() {
+  const chave = selectedStand?.key || '';
+  navigator.clipboard.writeText(chave).then(() => toast('Chave copiada!'))
+    .catch(() => toast('Não foi possível copiar'));
+}
+
+function imprimirRecibo() {
+  window.print();
+}
+
+/* =====================================================================
+   ADMIN
+   ===================================================================== */
+function adminTab(tab, btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('admin-cadastro').style.display = tab === 'cadastro' ? '' : 'none';
+  document.getElementById('admin-lista').style.display = tab === 'lista' ? '' : 'none';
+  if (tab === 'lista') renderAdminList();
+}
+
+function cadastrarStand() {
+  const name = document.getElementById('form-name').value.trim();
+  const icon = document.getElementById('form-icon').value.trim() || '🏪';
+  const desc = document.getElementById('form-desc').value.trim();
+  const key = document.getElementById('form-key').value.trim();
+  const receiver = document.getElementById('form-receiver').value.trim();
+  if (!name) return toast('Digite o nome do stand!', 'err');
+  if (!key) return toast('Digite a chave Pix!', 'err');
+  stands.push({ id: Date.now(), name, icon, desc, key, receiver });
+  saveStands();
+  toast('Stand cadastrado com sucesso! ✅');
+  document.getElementById('form-name').value = '';
+  document.getElementById('form-icon').value = '';
+  document.getElementById('form-desc').value = '';
+  document.getElementById('form-key').value = '';
+  document.getElementById('form-receiver').value = '';
+}
+
+function renderAdminList() {
+  const list = document.getElementById('admin-list');
+  const count = document.getElementById('stands-count');
+  count.textContent = `${stands.length} stand${stands.length !== 1 ? 's' : ''}`;
+  if (stands.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div><p>Nenhum stand cadastrado ainda.</p></div>`;
+    return;
+  }
+  list.innerHTML = stands.map((s, i) => `
+    <div class="admin-item">
+      <div class="admin-item-num">${i+1}</div>
+      <div class="admin-item-info">
+        <strong>${s.icon || '🏪'} ${s.name}</strong>
+        <small>${s.key}</small>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn btn-red" onclick="removerStand(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function removerStand(index) {
+  if (!confirm(`Remover "${stands[index].name}"?`)) return;
+  stands.splice(index, 1);
+  saveStands();
+  renderAdminList();
+  toast('Stand removido.');
+}
+function atualizarStats() {
+  document.getElementById('stats-total-pix').textContent =
+    pixStats.totalPix || 0;
+
+  document.getElementById('stats-valor-total').textContent =
+    `R$ ${(pixStats.valorTotal || 0).toFixed(2).replace('.', ',')}`;
+
+  document.getElementById('stats-ultimo-pix').textContent =
+    pixStats.ultimoPix || 'Nenhum';
+}
+
+/* =====================================================================
+   TOAST
+   ===================================================================== */
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = type === 'err' ? '#ff5c5c' : '#3ddc84';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+renderStands();
+</script>
+<div id="pix-success-modal" class="pix-success-modal">
+
+  <div class="pix-success-box">
+
+    <div class="success-icon">✓</div>
+
+    <h2>Pix Enviado</h2>
+
+    <p id="success-message">
+      Transferência concluída com sucesso.
+    </p>
+
+    <button onclick="fecharPixEnviado()">
+      FECHAR
+    </button>
+
+  </div>
+
+</div>
+</body>
+</html>
